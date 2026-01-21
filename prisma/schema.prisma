@@ -12,7 +12,7 @@ model User {
   email     String   @unique
   password  String?  // Optionnel car null si Google login
   provider  String   // 'credentials' ou 'google'
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
   
   // Relation : Un utilisateur a plusieurs tâches
   tasks     Task[]
@@ -41,8 +41,8 @@ model Task {
   priority    Priority   @default(medium) // Nouveau !
   dueDate     DateTime?  // Nouveau ! (Date limite)
   
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt // Se met à jour tout seul magiquement
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
 
   // Clé étrangère vers User
   userId      String
