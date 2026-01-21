@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+// Modèle Utilisateur
+model User {
+  id        String   @id @default(uuid()) // UUID automatique
+  email     String   @unique
+  password  String?  // Optionnel car null si Google login
+  provider  String   // 'credentials' ou 'google'
+  createdAt DateTime @default(now())
+  
+  // Relation : Un utilisateur a plusieurs tâches
+  tasks     Task[]
+  @@map("users")
+}
+
+// Enums pour les statuts et priorités (Typage strict !)
+enum TaskStatus {
+  todo
+  doing
+  done
+}
+
+enum Priority {
+  low
+  medium
+  high
+}
+
+// Modèle Tâche
+model Task {
+  id          String     @id @default(uuid())
+  title       String
+  description String?
+  status      TaskStatus @default(todo)
+  priority    Priority   @default(medium) // Nouveau !
+  dueDate     DateTime?  // Nouveau ! (Date limite)
+  
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt // Se met à jour tout seul magiquement
+
+  // Clé étrangère vers User
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("tasks")
+}

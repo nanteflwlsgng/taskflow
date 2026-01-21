@@ -4,7 +4,7 @@ import { TaskService } from "@/services/task.service";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
-// Fonction utilitaire pour vérifier la session (DRY - Don't Repeat Yourself)
+// Fonction helper pour récupérer l'ID user
 async function getUserId() {
   const session = await getServerSession(authOptions);
   if (!session || !session.user) return null;
@@ -19,7 +19,8 @@ export async function GET() {
   try {
     const tasks = await TaskService.getAll(userId);
     return NextResponse.json(tasks);
-  } catch (err) {
+  } catch (err: any) {
+    console.error("Erreur GET tasks:", err);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
@@ -31,15 +32,16 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { title, description } = body;
+    // On récupère les nouveaux champs
+    const { title, description, priority, dueDate } = body;
 
-    // C'est ici que tu avais le bug : on doit RETOURNER le résultat
-    const task = await TaskService.create(userId, title, description);
-    
-    // ✅ Le voici le return manquant !
+    if (!title) return NextResponse.json({ error: "Titre requis" }, { status: 400 });
+
+    const task = await TaskService.create(userId, title, description, priority, dueDate);
     return NextResponse.json(task, { status: 201 });
 
   } catch (err: any) {
+    console.error("Erreur POST task:", err);
     return NextResponse.json({ error: err.message || "Erreur création" }, { status: 400 });
   }
 }
@@ -51,17 +53,17 @@ export async function PUT(request: Request) {
 
   try {
     const body = await request.json();
-    const { id, title, description, status } = body;
+    const { id, ...fields } = body; // On sépare l'ID des autres champs
 
     if (!id) return NextResponse.json({ error: "ID manquant" }, { status: 400 });
 
-    // On passe userId pour sécuriser la modification
-    const updatedTask = await TaskService.update(userId, id, { title, description, status });
+    const updatedTask = await TaskService.update(userId, id, fields);
     
-    if (!updatedTask) return NextResponse.json({ error: "Tâche introuvable ou accès refusé" }, { status: 404 });
+    if (!updatedTask) return NextResponse.json({ error: "Introuvable" }, { status: 404 });
 
     return NextResponse.json(updatedTask);
   } catch (err: any) {
+    console.error("Erreur PUT task:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
@@ -77,13 +79,13 @@ export async function DELETE(request: Request) {
 
     if (!id) return NextResponse.json({ error: "ID manquant" }, { status: 400 });
 
-    // On passe userId pour sécuriser la suppression
     const deleted = await TaskService.delete(userId, id);
 
-    if (!deleted) return NextResponse.json({ error: "Tâche introuvable ou accès refusé" }, { status: 404 });
+    if (!deleted) return NextResponse.json({ error: "Introuvable" }, { status: 404 });
 
-    return NextResponse.json({ message: "Tâche supprimée" });
+    return NextResponse.json({ message: "Supprimé" });
   } catch (err: any) {
+    console.error("Erreur DELETE task:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
