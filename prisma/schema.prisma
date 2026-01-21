@@ -45,7 +45,7 @@ model Task {
   updatedAt   DateTime   @updatedAt @map("updated_at")
 
   // Clé étrangère vers User
-  userId      String
+  userId      String @map("user_id")
   user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("tasks")
